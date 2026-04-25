@@ -14,9 +14,12 @@ import (
 // cmdChat opens an interactive Claude session pre-loaded with the task body.
 func cmdChat(profile string, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: mw chat <id>")
+		return errors.New("usage: mw chat <id-or-suffix>")
 	}
-	id := args[0]
+	id, err := resolveID(profile, args[0])
+	if err != nil {
+		return err
+	}
 	cfg, err := config.Load(profile)
 	if err != nil {
 		return err

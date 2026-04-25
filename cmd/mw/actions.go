@@ -13,9 +13,12 @@ import (
 // cmdDone marks a task complete and flips its cache line.
 func cmdDone(profile string, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: mw done <id>")
+		return errors.New("usage: mw done <id-or-suffix>")
 	}
-	id := args[0]
+	id, err := resolveID(profile, args[0])
+	if err != nil {
+		return err
+	}
 	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
@@ -33,9 +36,12 @@ func cmdDone(profile string, args []string) error {
 // cmdSnooze sets a task's due date.
 func cmdSnooze(profile string, args []string) error {
 	if len(args) < 2 {
-		return errors.New("usage: mw snooze <id> <date>  (YYYY-MM-DD or 'wednesday' / 'tomorrow' / '3 days')")
+		return errors.New("usage: mw snooze <id-or-suffix> <date>  (YYYY-MM-DD or 'wednesday' / 'tomorrow' / '3 days')")
 	}
-	id := args[0]
+	id, err := resolveID(profile, args[0])
+	if err != nil {
+		return err
+	}
 	date, err := parseDate(strings.Join(args[1:], " "))
 	if err != nil {
 		return err
@@ -54,9 +60,12 @@ func cmdSnooze(profile string, args []string) error {
 // cmdDrop marks an inbox item complete and flips its cache line.
 func cmdDrop(profile string, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: mw drop <id>")
+		return errors.New("usage: mw drop <id-or-suffix>")
 	}
-	id := args[0]
+	id, err := resolveID(profile, args[0])
+	if err != nil {
+		return err
+	}
 	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
@@ -85,9 +94,12 @@ type promoteFlags struct {
 // applies any optional metadata.
 func cmdPromote(profile string, args []string) error {
 	if len(args) < 1 {
-		return errors.New("usage: mw promote <id> [--name X] [--list admin|birthdays] [--due YYYY-MM-DD] [--priority P] [--tags a,b] [--recur INT]")
+		return errors.New("usage: mw promote <id-or-suffix> [--name X] [--list admin|birthdays] [--due DATE] [--priority P] [--tags a,b] [--recur INT]")
 	}
-	id := args[0]
+	id, err := resolveID(profile, args[0])
+	if err != nil {
+		return err
+	}
 	flags, err := parsePromoteFlags(args[1:])
 	if err != nil {
 		return err
