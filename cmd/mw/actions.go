@@ -15,11 +15,11 @@ func cmdDone(profile string, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: mw done <id-or-suffix>")
 	}
-	id, err := resolveID(profile, args[0])
+	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
 	}
-	cfg, err := config.Load(profile)
+	id, err := resolveID(cfg, args[0])
 	if err != nil {
 		return err
 	}
@@ -38,15 +38,15 @@ func cmdSnooze(profile string, args []string) error {
 	if len(args) < 2 {
 		return errors.New("usage: mw snooze <id-or-suffix> <date>  (YYYY-MM-DD or 'wednesday' / 'tomorrow' / '3 days')")
 	}
-	id, err := resolveID(profile, args[0])
+	cfg, err := config.Load(profile)
+	if err != nil {
+		return err
+	}
+	id, err := resolveID(cfg, args[0])
 	if err != nil {
 		return err
 	}
 	date, err := parseDate(strings.Join(args[1:], " "))
-	if err != nil {
-		return err
-	}
-	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
 	}
@@ -62,11 +62,11 @@ func cmdDrop(profile string, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: mw drop <id-or-suffix>")
 	}
-	id, err := resolveID(profile, args[0])
+	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
 	}
-	cfg, err := config.Load(profile)
+	id, err := resolveID(cfg, args[0])
 	if err != nil {
 		return err
 	}
@@ -96,16 +96,15 @@ func cmdPromote(profile string, args []string) error {
 	if len(args) < 1 {
 		return errors.New("usage: mw promote <id-or-suffix> [--name X] [--list admin|birthdays] [--due DATE] [--priority P] [--tags a,b] [--recur INT]")
 	}
-	id, err := resolveID(profile, args[0])
+	cfg, err := config.Load(profile)
+	if err != nil {
+		return err
+	}
+	id, err := resolveID(cfg, args[0])
 	if err != nil {
 		return err
 	}
 	flags, err := parsePromoteFlags(args[1:])
-	if err != nil {
-		return err
-	}
-
-	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
 	}

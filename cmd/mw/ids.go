@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/plainlystated/my-week/internal/config"
 )
 
 // resolveID accepts a partial ClickUp ID and resolves it against the IDs
@@ -11,18 +13,21 @@ import (
 // terminal characters of a ClickUp ID vary while the prefix is the timestamp
 // portion, so suffix matching is the natural shorthand.
 //
+// Takes *config.Config (not the -p flag value) because the cache file is
+// keyed by cfg.Profile, which may differ from the config filename.
+//
 // Resolution rules:
 //   - exactly one cache ID has `partial` as a suffix → use that ID
 //   - no cache match, but `partial` looks like a full ID → pass through (may
 //     be a task created since last refresh)
 //   - no cache match and `partial` is short → error with a hint
 //   - 2+ cache IDs match → error listing the candidates
-func resolveID(profile, partial string) (string, error) {
+func resolveID(cfg *config.Config, partial string) (string, error) {
 	partial = strings.TrimSpace(partial)
 	if partial == "" {
 		return "", fmt.Errorf("empty task ID")
 	}
-	snap, _, err := loadCurrentCache(profile, time.Now())
+	snap, _, err := loadCurrentCache(cfg.Profile, time.Now())
 	if err != nil {
 		return "", err
 	}

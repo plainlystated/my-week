@@ -16,11 +16,11 @@ func cmdChat(profile string, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: mw chat <id-or-suffix>")
 	}
-	id, err := resolveID(profile, args[0])
+	cfg, err := config.Load(profile)
 	if err != nil {
 		return err
 	}
-	cfg, err := config.Load(profile)
+	id, err := resolveID(cfg, args[0])
 	if err != nil {
 		return err
 	}
