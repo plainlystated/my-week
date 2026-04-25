@@ -118,6 +118,51 @@ func TestAppendNewItems_NewSection(t *testing.T) {
 	}
 }
 
+func TestSetSection_Replace(t *testing.T) {
+	s, _ := Parse(fixture)
+	newBlock := "\n## Overdue\n- [ ] 86b9zzz — **Replaced**\n"
+	s.SetSection("Overdue", newBlock, "")
+	if !strings.Contains(s.Body, "86b9zzz") {
+		t.Errorf("replacement line missing")
+	}
+	if strings.Contains(s.Body, "86b9ovxx1") {
+		t.Errorf("old overdue content not removed")
+	}
+	// Surrounding sections should still be present.
+	if !strings.Contains(s.Body, "## This Week") {
+		t.Errorf("This Week section disappeared")
+	}
+	if !strings.Contains(s.Body, "## Last week (W17) recap") {
+		t.Errorf("Recap section disappeared")
+	}
+}
+
+func TestSetSection_Remove(t *testing.T) {
+	s, _ := Parse(fixture)
+	s.SetSection("Overdue", "", "")
+	if strings.Contains(s.Body, "## Overdue") {
+		t.Errorf("Overdue header still present after remove")
+	}
+	// Adjacent sections should still be glued correctly.
+	if !strings.Contains(s.Body, "## This Week") {
+		t.Errorf("This Week section disappeared after Overdue removal")
+	}
+}
+
+func TestSetSection_Insert(t *testing.T) {
+	s, _ := Parse(fixture)
+	// Strip Overdue first to confirm insertion behavior.
+	s.SetSection("Overdue", "", "")
+	// Now reinsert before This Week.
+	block := "\n## Overdue\n- [ ] inserted — **Reinserted**\n"
+	s.SetSection("Overdue", block, "This Week")
+	idxOver := strings.Index(s.Body, "## Overdue")
+	idxThis := strings.Index(s.Body, "## This Week")
+	if idxOver == -1 || idxThis == -1 || idxOver >= idxThis {
+		t.Errorf("Overdue must be inserted before This Week; idxOver=%d idxThis=%d", idxOver, idxThis)
+	}
+}
+
 func TestRemoveID(t *testing.T) {
 	s, _ := Parse(fixture)
 	s.RemoveID("86b9ovxx1") // the Overdue line

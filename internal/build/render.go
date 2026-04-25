@@ -27,11 +27,8 @@ func render(cfg *config.Config, today time.Time, sw sweep.Result, b *buckets, r 
 		}
 	}
 
-	if len(b.inbox) > 0 {
-		fmt.Fprintf(&out, "\n## Inbox (%d to triage)\n", len(b.inbox))
-		for _, t := range b.inbox {
-			fmt.Fprintf(&out, "- [ ] %s — **%s**\n", t.ID, t.Name)
-		}
+	if block := RenderInboxBlock(b.inbox); block != "" {
+		out.WriteString(block)
 	}
 
 	if len(b.overdue) > 0 {

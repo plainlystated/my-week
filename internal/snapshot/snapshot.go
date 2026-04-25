@@ -80,6 +80,44 @@ func (s *Snapshot) IDs() []string {
 	return out
 }
 
+// SetSection finds the section whose header line begins with "## headerPrefix"
+// and replaces it with `block`. The block must be a complete section starting
+// with "\n## " and ending with a newline, or "" to delete the section.
+//
+// If the section doesn't exist and block is non-empty, inserts before the
+// section matching `insertBefore` (also a "## ..." prefix). If that anchor
+// is also missing, splices in before the trailing "---" footer or at end of body.
+func (s *Snapshot) SetSection(headerPrefix, block, insertBefore string) {
+	needle := "\n## " + headerPrefix
+	if startIdx := strings.Index(s.Body, needle); startIdx >= 0 {
+		end := len(s.Body)
+		searchFrom := startIdx + 1
+		if i := strings.Index(s.Body[searchFrom:], "\n## "); i >= 0 {
+			end = searchFrom + i
+		}
+		if i := strings.Index(s.Body[searchFrom:], "\n---\n"); i >= 0 && searchFrom+i < end {
+			end = searchFrom + i
+		}
+		s.Body = s.Body[:startIdx] + block + s.Body[end:]
+		return
+	}
+	if block == "" {
+		return
+	}
+	if insertBefore != "" {
+		anchor := "\n## " + insertBefore
+		if i := strings.Index(s.Body, anchor); i >= 0 {
+			s.Body = s.Body[:i] + block + s.Body[i:]
+			return
+		}
+	}
+	if i := strings.LastIndex(s.Body, "\n---\n"); i >= 0 {
+		s.Body = s.Body[:i] + block + s.Body[i:]
+		return
+	}
+	s.Body += block
+}
+
 // RemoveID deletes any task line whose ID matches `id`, plus any blank
 // section that drop leaves behind. Used after `mw promote` so the inbox line
 // disappears immediately rather than waiting for the next FRESH_BUILD.

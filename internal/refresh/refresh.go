@@ -349,6 +349,10 @@ func refreshExistingSnapshot(client *cup.Client, cfg *config.Config, snap *snaps
 	}
 	snap.AppendNewItems(newItems)
 
+	if err := refreshInboxSection(client, cfg, snap); err != nil {
+		return nil, fmt.Errorf("inbox refresh: %w", err)
+	}
+
 	snap.FrontMatter.RefreshedAt = now
 	if updateSweptOn {
 		snap.FrontMatter.SweptOn = now.Format("2006-01-02")
@@ -362,6 +366,33 @@ func refreshExistingSnapshot(client *cup.Client, cfg *config.Config, snap *snaps
 		NewItems:    len(newItems),
 		StatusFlips: flips,
 	}, nil
+}
+
+// refreshInboxSection re-queries the inbox list and rewrites the Inbox
+// section in-place. The bulk fetch covers the rest of the space but the
+// inbox is its own list and its membership turns over independently of the
+// other sections — new email-forwarded items should appear within an hour,
+// not wait for the next FRESH_BUILD.
+func refreshInboxSection(client *cup.Client, cfg *config.Config, snap *snapshot.Snapshot) error {
+	if cfg.ClickUp.Lists.Inbox == "" {
+		return nil
+	}
+	items, err := client.Tasks(cup.TaskQuery{
+		All:    true,
+		ListID: cfg.ClickUp.Lists.Inbox,
+	})
+	if err != nil {
+		return err
+	}
+	open := make([]cup.Task, 0, len(items))
+	for _, t := range items {
+		if t.IsDone() {
+			continue
+		}
+		open = append(open, t)
+	}
+	snap.SetSection("Inbox", build.RenderInboxBlock(open), "Overdue")
+	return nil
 }
 
 func detectNewItems(client *cup.Client, cfg *config.Config, snap *snapshot.Snapshot, now time.Time) ([]string, error) {
