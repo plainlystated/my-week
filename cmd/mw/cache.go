@@ -44,3 +44,18 @@ func flipCacheLine(profile, id string, done bool, now time.Time) error {
 	snap.FrontMatter.RefreshedAt = now
 	return os.WriteFile(path, []byte(snap.Render()), 0o644)
 }
+
+// removeCacheLine drops every line referencing `id`. Used by promote so the
+// task disappears from its (now-stale) inbox section immediately.
+func removeCacheLine(profile, id string, now time.Time) error {
+	snap, path, err := loadCurrentCache(profile, now)
+	if err != nil {
+		return err
+	}
+	if snap == nil {
+		return nil
+	}
+	snap.RemoveID(id)
+	snap.FrontMatter.RefreshedAt = now
+	return os.WriteFile(path, []byte(snap.Render()), 0o644)
+}

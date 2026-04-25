@@ -321,6 +321,7 @@ func (c *Client) HasNextInstanceComment(id string) (bool, error) {
 
 // UpdateOpts captures the subset of `cup update` flags we use.
 type UpdateOpts struct {
+	Name        string
 	Status      string // fuzzy-matched by cup
 	DueDate     string // YYYY-MM-DD, "none" or "clear" to remove
 	Description string
@@ -330,6 +331,9 @@ type UpdateOpts struct {
 // Update runs `cup update <id>` with the given flags.
 func (c *Client) Update(id string, o UpdateOpts) error {
 	args := []string{"update", id}
+	if o.Name != "" {
+		args = append(args, "--name", o.Name)
+	}
 	if o.Status != "" {
 		args = append(args, "--status", o.Status)
 	}
@@ -396,9 +400,25 @@ func (c *Client) PostComment(id, message string) error {
 	return err
 }
 
-// Move runs `cup move <id> --to <listID>`.
-func (c *Client) Move(id, toListID string) error {
-	_, err := c.run("move", id, "--to", toListID)
+// MoveOpts captures the cup move flags. To adds the task to a list; Remove
+// removes it from a list. Both can be set in the same call to perform a true
+// move (ClickUp tasks can live in multiple lists, so just adding to a new
+// list does not remove from the old one).
+type MoveOpts struct {
+	To     string
+	Remove string
+}
+
+// Move runs `cup move <id> [--to L] [--remove L]`.
+func (c *Client) Move(id string, o MoveOpts) error {
+	args := []string{"move", id}
+	if o.To != "" {
+		args = append(args, "--to", o.To)
+	}
+	if o.Remove != "" {
+		args = append(args, "--remove", o.Remove)
+	}
+	_, err := c.run(args...)
 	return err
 }
 

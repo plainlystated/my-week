@@ -118,6 +118,20 @@ func TestAppendNewItems_NewSection(t *testing.T) {
 	}
 }
 
+func TestRemoveID(t *testing.T) {
+	s, _ := Parse(fixture)
+	s.RemoveID("86b9ovxx1") // the Overdue line
+	if strings.Contains(s.Body, "86b9ovxx1") {
+		t.Errorf("RemoveID did not drop the line")
+	}
+	// Other tasks remain untouched.
+	for _, id := range []string{"86b9gg5ux", "86b9twxx1", "86b9bk010"} {
+		if !strings.Contains(s.Body, id) {
+			t.Errorf("RemoveID dropped unrelated id %s", id)
+		}
+	}
+}
+
 func TestAppendNewItems_MergeDeduplicates(t *testing.T) {
 	body := strings.Replace(fixture, "## Backlog", `## New since snapshot
 - [ ] 86b9old01 — **Existing**

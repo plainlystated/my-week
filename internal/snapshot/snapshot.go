@@ -80,6 +80,22 @@ func (s *Snapshot) IDs() []string {
 	return out
 }
 
+// RemoveID deletes any task line whose ID matches `id`, plus any blank
+// section that drop leaves behind. Used after `mw promote` so the inbox line
+// disappears immediately rather than waiting for the next FRESH_BUILD.
+func (s *Snapshot) RemoveID(id string) {
+	lines := strings.Split(s.Body, "\n")
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		m := TaskLineRE.FindStringSubmatch(line)
+		if m != nil && m[4] == id {
+			continue
+		}
+		out = append(out, line)
+	}
+	s.Body = strings.Join(out, "\n")
+}
+
 // FlipCheckboxes updates [x]/[ ] on every task line whose ID is in statusByID.
 // IDs missing from the map are left as-is (treated as "deleted from ClickUp").
 func (s *Snapshot) FlipCheckboxes(doneByID map[string]bool) {

@@ -127,7 +127,11 @@ func cmdPromote(profile string, args []string) error {
 		return fmt.Errorf("config has no list ID for %q", target)
 	}
 
-	if err := client.Move(id, listID); err != nil {
+	// ClickUp tasks can live in multiple lists, so a true "move" needs both
+	// --to (add to target) and --remove (drop from inbox). If inbox is unset
+	// in config, just add to the target.
+	moveOpts := cup.MoveOpts{To: listID, Remove: cfg.ClickUp.Lists.Inbox}
+	if err := client.Move(id, moveOpts); err != nil {
 		return fmt.Errorf("move: %w", err)
 	}
 
@@ -140,7 +144,7 @@ func cmdPromote(profile string, args []string) error {
 	}
 
 	if flags.name != "" || flags.due != "" || flags.priority != "" {
-		opts := cup.UpdateOpts{DueDate: flags.due, Priority: flags.priority}
+		opts := cup.UpdateOpts{Name: flags.name, DueDate: flags.due, Priority: flags.priority}
 		if err := client.Update(id, opts); err != nil {
 			return fmt.Errorf("update metadata: %w", err)
 		}
@@ -151,7 +155,14 @@ func cmdPromote(profile string, args []string) error {
 		}
 	}
 
-	fmt.Fprintf(stderr, "Promoted %s to %s. Run `mw refresh` to update the cache.\n", id, target)
+	// Drop the now-stale inbox line from the cache so `mw` shows it gone.
+	// REFRESH_ONLY doesn't re-categorize, so without this the line would
+	// linger under ## Inbox until the next FRESH_BUILD.
+	if err := removeCacheLine(cfg.Profile, id, time.Now()); err != nil {
+		fmt.Fprintf(stderr, "warn: removed task in cup but cache update failed: %v\n", err)
+	}
+
+	fmt.Fprintf(stderr, "Promoted %s to %s.\n", id, target)
 	return nil
 }
 
