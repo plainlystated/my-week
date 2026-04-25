@@ -32,12 +32,13 @@ func cmdDone(profile string, args []string) error {
 
 // cmdSnooze sets a task's due date.
 func cmdSnooze(profile string, args []string) error {
-	if len(args) != 2 {
-		return errors.New("usage: mw snooze <id> <YYYY-MM-DD>")
+	if len(args) < 2 {
+		return errors.New("usage: mw snooze <id> <date>  (YYYY-MM-DD or 'wednesday' / 'tomorrow' / '3 days')")
 	}
-	id, date := args[0], args[1]
-	if _, err := time.Parse("2006-01-02", date); err != nil {
-		return fmt.Errorf("date must be YYYY-MM-DD: %w", err)
+	id := args[0]
+	date, err := parseDate(strings.Join(args[1:], " "))
+	if err != nil {
+		return err
 	}
 	cfg, err := config.Load(profile)
 	if err != nil {
@@ -46,7 +47,7 @@ func cmdSnooze(profile string, args []string) error {
 	if err := cup.New(cfg.CupProfile).Update(id, cup.UpdateOpts{DueDate: date}); err != nil {
 		return err
 	}
-	fmt.Fprintf(stderr, "Snoozed %s to %s. Run `mw refresh` to update the cache.\n", id, date)
+	fmt.Fprintf(stderr, "Snoozed %s to %s. Run `mw refresh` to update the cache.\n", id, formatParsedDate(date))
 	return nil
 }
 
@@ -119,10 +120,16 @@ func cmdPromote(profile string, args []string) error {
 		return fmt.Errorf("move: %w", err)
 	}
 
+	if flags.due != "" {
+		parsed, err := parseDate(flags.due)
+		if err != nil {
+			return err
+		}
+		flags.due = parsed
+	}
+
 	if flags.name != "" || flags.due != "" || flags.priority != "" {
 		opts := cup.UpdateOpts{DueDate: flags.due, Priority: flags.priority}
-		// cup update doesn't have --name; we'd use --field for that, but the spec
-		// puts name editing under -n. cup update supports -n via the existing CLI:
 		if err := client.Update(id, opts); err != nil {
 			return fmt.Errorf("update metadata: %w", err)
 		}
