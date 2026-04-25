@@ -1,0 +1,26 @@
+# Copy to ~/.config/my-week/<profile>.yml (e.g. ~/.config/my-week/personal.yml)
+# and fill in your values. Required fields are marked.
+
+profile: personal               # required — the profile name (matches filename)
+cup_profile: personal           # required — passed to cup as `cup -p <profile>`
+
+clickup:
+  space_id: "<your-space-id>"   # required — ClickUp space ID
+  lists:
+    admin: "<list-id>"          # required — primary tasks list
+    birthdays: "<list-id>"      # required — birthdays/anniversaries list
+    inbox: ""                   # optional — forwarded-email triage list (leave empty to disable)
+
+email:
+  to: "you@example.com"         # required — digest recipient
+  from: "you@example.com"       # required — must be verified in Resend
+  subject_prefix: "Personal"    # e.g. subject becomes "Personal weekly review — Mon Apr 27"
+
+digest:
+  send_on: monday               # day-of-week (lowercase)
+  send_after: "08:00"           # local time HH:MM
+
+lookahead_days: 7               # "this week" window
+lookahead_multiplier: 3         # heads-up window = lookahead_days * multiplier (e.g. 21 days)
+
+staleness_threshold_minutes: 90 # auto-refresh on read if cache is older than this
